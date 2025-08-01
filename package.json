@@ -1,0 +1,47 @@
+{
+  "name": "@nor2/heim-mcp",
+  "version": "0.1.2",
+  "description": "MCP to deploy applications",
+  "author": "Timmy Silesmo",
+  "license": "MIT",
+  "homepage": "https://github.com/nor2-io/heim-mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nor2-io/heim-mcp.git"
+  },
+  "keywords": [
+    "heim",
+    "mcp",
+    "backend",
+    "serverless",
+    "faas",
+    "containerlike",
+    "cloud",
+    "openapi"
+  ],
+  "type": "module",
+  "bin": {
+    "heim-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "prepare": "npm run build",
+    "dev": "tsc --watch"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.17.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "24.1.0",
+    "shx": "0.4.0",
+    "typescript": "5.9.2"
+  }
+}
