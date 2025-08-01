@@ -21,14 +21,35 @@ export function registerTools(server: McpServer) {
           .string()
           .describe(
             "Absolute windows path to OpenAPI file. The schema requires operationId and a full list of what Heim supports of the OpenAPI schema can be found here: https://cloud.heim.dev/heim/docs/templates/openapi/#openapi-root-object"
-          )
-          .optional(),
+          ),
         name: z
           .string()
           .describe(
             "The name of the application. This will be used to name the application folder and set the name in the application.toml file."
-          )
-          .optional(),
+          ),
+        language: z
+          .union([z.literal("rust"), z.literal("csharp")])
+          .describe(
+            "The programming language you want to use for creating an application from an OpenAPI specification. Currently Rust and CSharp are supported."
+          ),
+        version: z
+          .string()
+          .default("0.1.0")
+          .describe(
+            "The version number it will set for the application in SemVer format. Defaults to `0.1.0`."
+          ),
+        basePath: z
+          .string()
+          .default("/")
+          .describe(
+            "The base path added bafore the path in the OpenAPI schema. Defaults to not adding a base path."
+          ),
+        overwrite: z
+          .boolean()
+          .default(false)
+          .describe(
+            "Should the new application overwrite an existing folder if it already exists? Defaults to `false`."
+          ),
       },
       annotations: {
         destructiveHint: false,
@@ -41,11 +62,21 @@ export function registerTools(server: McpServer) {
       const execPromise = util.promisify(exec);
       try {
         const { stdout, stderr } = await execPromise(
-          `heim new --path ${request.path} --spec ${request.openApiPath}`
+          `heim new --path ${request.path} --spec ${
+            request.openApiPath
+          } --name ${request.name} --version ${request.version} --language ${
+            request.language
+          } --base-path ${request.basePath}  ${
+            request.overwrite ? "--force" : ""
+          }`
         );
+
         const output2 = await execPromise(
-          `cargo build --manifest-path ${request.path}/generated/Cargo.toml --target wasm32-wasip2`
+          request.language == "rust"
+            ? `cargo build --manifest-path ${request.path}/${request.name}/Cargo.toml --target wasm32-wasip2`
+            : `dotnet build ${request.path}/${request.name}/${request.name}.csproj`
         );
+
         return {
           content: [
             {
