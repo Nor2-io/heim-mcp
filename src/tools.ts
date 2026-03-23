@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { z } from "zod";
 import util from "util";
 
@@ -59,23 +59,32 @@ export function registerTools(server: McpServer) {
       },
     },
     async (request) => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
-        const { stdout, stderr } = await execPromise(
-          `heim new --path ${request.path} --spec ${
-            request.openApiPath
-          } --name ${request.name} --version ${request.version} --language ${
-            request.language
-          } --base-path ${request.basePath}  ${
-            request.overwrite ? "--force" : ""
-          }`
-        );
+        const args = [
+          "new",
+          "--path", request.path,
+          "--spec", request.openApiPath,
+          "--name", request.name,
+          "--version", request.version,
+          "--language", request.language,
+          "--base-path", request.basePath];  
+        if (request.overwrite) args.push("--force");  
+        const { stdout, stderr } = await execFilePromise("heim", args);
 
-        const output2 = await execPromise(
+        const output2 =
           request.language == "rust"
-            ? `cargo build --manifest-path ${request.path}/${request.name}/Cargo.toml --target wasm32-wasip2`
-            : `dotnet build ${request.path}/${request.name}/${request.name}.csproj`
-        );
+            ? await execFilePromise("cargo", [
+                "build",
+                "--manifest-path",
+                `${request.path}/${request.name}/Cargo.toml`,
+                "--target",
+                "wasm32-wasip2",
+              ])
+            : await execFilePromise("dotnet", [
+                "build",
+                `${request.path}/${request.name}/${request.name}.csproj`,
+              ]);
 
         return {
           content: [
@@ -115,11 +124,12 @@ export function registerTools(server: McpServer) {
       },
     },
     async (request) => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
-        const { stdout, stderr } = await execPromise(
-          `heim deploy ${request.path}`
-        );
+        const args = ["deploy"];              
+        if (request.path) args.push(request.path); 
+
+        const { stdout, stderr } = await execFilePromise("heim", args);
         return {
           content: [
             {
@@ -158,12 +168,14 @@ export function registerTools(server: McpServer) {
       },
     },
     async (request) => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
         //TODO: Update to use org and project when a user has multiple orgs and projects
-        const { stdout, stderr } = await execPromise(
-          `heim deploy ${request.path} --cloud`
-        );
+        const args = ["deploy"];                 
+        if (request.path) args.push(request.path); 
+        args.push("--cloud");                    
+
+        const { stdout, stderr } = await execFilePromise("heim", args);
         return {
           content: [
             {
@@ -195,9 +207,9 @@ export function registerTools(server: McpServer) {
       openWorldHint: false,
     },
     async () => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
-        const { stdout, stderr } = await execPromise("heim start");
+        const { stdout, stderr } = await execFilePromise("heim", ["start"]);
         return {
           content: [
             {
@@ -227,9 +239,9 @@ export function registerTools(server: McpServer) {
       openWorldHint: false,
     },
     async () => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
-        const { stdout, stderr } = await execPromise("heim clear --force");
+        const { stdout, stderr } = await execFilePromise("heim", ["clear", "--force"]);
         return {
           content: [
             {
@@ -259,9 +271,9 @@ export function registerTools(server: McpServer) {
       openWorldHint: false,
     },
     async () => {
-      const execPromise = util.promisify(exec);
+      const execFilePromise = util.promisify(execFile);
       try {
-        const { stdout, stderr } = await execPromise("heim update");
+        const { stdout, stderr } = await execFilePromise("heim", ["update"]);
         return {
           content: [
             {
@@ -279,3 +291,4 @@ export function registerTools(server: McpServer) {
     }
   );
 }
+
